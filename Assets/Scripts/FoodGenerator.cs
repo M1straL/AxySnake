@@ -1,23 +1,27 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Pool;
 
 public class FoodGenerator : MonoBehaviour
 {
     private float _time = 20f;
     private float _timer;
+    private int _minRadius = 1;
+    private int _maxRadius = 10;
+    
+    private Vector3 foodPosition;
 
     [SerializeField] 
-    private GameObject _gameObject;
-    private Food _food;
-    
-    // Start is called before the first frame update
+    private GameObject[] _foodPrefabs;
+
+    private ObjectPool<Food> _foodPool;
+
     void Start()
     {
         _timer = _time;
     }
-
-    // Update is called once per frame
+    
     void Update()
     {
         if (_timer > 0)
@@ -26,8 +30,35 @@ public class FoodGenerator : MonoBehaviour
         }
         else
         {
-            Instantiate(_gameObject, transform.position, Quaternion.identity);
+            SpawnFood();
             _timer = _time;
         }
+    }
+
+    private void SpawnFood()
+    {
+        //TODO описать работу с пулом.
+
+        var randomIdx = Random.Range(0, _foodPrefabs.Length - 1);
+        var foodPrefab = _foodPrefabs[randomIdx];
+        
+        if (foodPrefab == null)
+        {
+            return;
+        }
+        
+        var foodObj = Instantiate(_foodPrefabs[randomIdx], foodPosition, Quaternion.identity);
+        var food = foodObj.GetComponent<Food>();
+        foodObj.tag = "Food";
+
+        food.DieEvent = GameManager.instance.OnFoodDieEvent;
+    }
+    
+    private void 
+
+    private Vector3 CalculateFoodPosition()
+    {
+        //TODO рассчитать нормальный радиус
+        return Vector3.zero; 
     }
 }

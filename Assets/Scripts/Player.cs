@@ -1,45 +1,38 @@
 ﻿using UnityEngine;
+using UnityEngine.Animations;
 
 public class Player : MonoBehaviour, IMoveable
 {
-    private CharacterController controller;
+    private CharacterController _characterController;
     private readonly float _playerSpeed = 8.0f;
     private readonly float _rotationSpeed = 50.0f;
     private Camera _playerCamera;
     
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        //controller = gameObject.AddComponent<CharacterController>();
+        _characterController = gameObject.AddComponent<CharacterController>();
         _playerCamera = gameObject.GetComponent<Camera>();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        Move();
         Rotate();
+        Move();
     }
 
     public void Move()
     {
-        float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
-
-        Vector3 movementDirection = new Vector3(horizontalInput,0, verticalInput);
+        Vector3 movementDirection = new Vector3(0,0, verticalInput);
         movementDirection.Normalize();
-        transform.Translate(movementDirection * (_playerSpeed * Time.deltaTime), Space.World);
+        transform.Translate(movementDirection * (_playerSpeed * Time.deltaTime), Space.Self);
     }
 
     private void Rotate()
     {
         float horizontalInput = Input.GetAxis("Horizontal");
-        var eulerAngles = transform.rotation.eulerAngles;
 
         Vector3 rotateTo = new Vector3(0, horizontalInput, 0) * (_rotationSpeed * Time.deltaTime);
-       // Vector3 rotateFrom = transform.rotation
-        
-        //transform.Rotate(eulerAngles.x, eulerAngles.y);
         transform.Rotate(rotateTo);
     }
 }

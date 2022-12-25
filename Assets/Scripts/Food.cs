@@ -1,18 +1,30 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Food : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    [SerializeField]
+    private Collider _collider;
+
+    [SerializeField]
+    private int _score;
+
+    public Action<Food,int> DieEvent;
+
+    public void Start()
     {
         
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnCollisionEnter(Collision other)
     {
-        
+        if (other.transform.root.CompareTag("Player") || other.transform.root.CompareTag("Wasp"))
+        {
+            //PlayAnimationClip
+            Destroy(this);
+            DieEvent(this, _score);
+        }
     }
 }
