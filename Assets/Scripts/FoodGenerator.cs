@@ -5,9 +5,12 @@ using UnityEngine.Pool;
 
 public class FoodGenerator : MonoBehaviour
 {
+    [SerializeField]
     private float _time = 20f;
     private float _timer;
+    [SerializeField] 
     private int _minRadius = 1;
+    [SerializeField]
     private int _maxRadius = 10;
     
     private Vector3 foodPosition;
@@ -50,11 +53,11 @@ public class FoodGenerator : MonoBehaviour
         var foodObj = Instantiate(_foodPrefabs[randomIdx], foodPosition, Quaternion.identity);
         var food = foodObj.GetComponent<Food>();
         foodObj.tag = "Food";
+        //_foodPool = new ObjectPool<Food>();
 
         food.DieEvent = GameManager.instance.OnFoodDieEvent;
     }
     
-    private void 
 
     private Vector3 CalculateFoodPosition()
     {
