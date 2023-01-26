@@ -1,16 +1,15 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
+using DefaultNamespace;
 using UnityEngine;
 
 public class GameLoader : MonoBehaviour
 {
-    public GameManager GameManager;
+    private GameManager GameManager;
+    private LevelManager LevelManager;
+
     private void Awake()
     {
-        if (GameManager.instance == null)
-        {
-            Instantiate(GameManager);
-        }
+        if (GameManager.instance == null) Instantiate(GameManager);
+
+        if (LevelManager.instance == null) Instantiate(LevelManager);
     }
 }

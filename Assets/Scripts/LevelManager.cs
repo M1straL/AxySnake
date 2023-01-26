@@ -1,36 +1,42 @@
-﻿using UnityEngine;
-using UnityEngine.Pool;
+﻿using System.Linq;
+using UnityEngine;
 
 namespace DefaultNamespace
 {
     public class LevelManager : MonoBehaviour
     {
-        public static LevelManager instance = null;
-        private PooledObject<Food> _foodPool; 
+        public static LevelManager instance;
 
-        private void Awake () {
+        [SerializeField] private LevelsConfig _levelsConfig;
 
-            if (instance == null) {
+        private FoodManager _foodManager;
+
+        private void Awake()
+        {
+            if (instance == null)
                 instance = this;
-            } else if(instance == this){
-                Destroy(gameObject); 
-            }
-        
+            else if (instance == this) Destroy(gameObject);
+
             DontDestroyOnLoad(gameObject);
 
-            InitializeLevel();
+            _foodManager = new FoodManager();
         }
 
-        private void InitializeLevel()
+        private void Start()
         {
-            //Instantiate Enemies
-            FillTheLevelWithFood();
-            //Instantiate Blocks
         }
 
-        private void FillTheLevelWithFood()
+        private LevelsConfig.LevelData GetLevelData(int level)
         {
-            
+            return _levelsConfig._levelDatas.FirstOrDefault(data => data._level == level);
+        }
+
+
+        public void InitializeLevel(int level)
+        {
+            var levelData = GetLevelData(level);
+
+            _foodManager.Init(levelData.FoodDatas);
         }
     }
 }
