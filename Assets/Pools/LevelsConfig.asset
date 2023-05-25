@@ -14,12 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _levelDatas:
   - _level: 1
-    EnemyDatas:
-    - Prefab: {fileID: 0}
-      Count: 0
-      MaxCountOnLevel: 0
+    EnemyDatas: []
     FoodDatas:
-    - Prefab: {fileID: 0}
-      Count: 0
-      MaxCountOnLevel: 0
+    - Prefab: {fileID: 907813690654365482, guid: ccb131e6e349a794fa280d15ba7afa48,
+        type: 3}
+      Count: 20
+      MaxCountOnLevel: 25
     CollectableDatas: []

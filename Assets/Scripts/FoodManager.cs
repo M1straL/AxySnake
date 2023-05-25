@@ -1,17 +1,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using DefaultNamespace;
+using UniRx;
 using UnityEngine;
 
 public class FoodManager : MonoBehaviour
 {
-    [SerializeField] private float _spawnTime = 20f;
+    [SerializeField] private float _spawnTime = 5f;
 
     [SerializeField] private float _spawnRadius = 10;
 
     [SerializeField] private int _maxCountOnLevel = 25;
 
     private int _amountOnStart;
+
+    private Ctx _ctx;
     private int _currentCountOnLevel;
 
     private List<GameObject> _foodPrefabs;
@@ -34,7 +37,7 @@ public class FoodManager : MonoBehaviour
         }
         else if (_objectsInScene.Count < _maxCountOnLevel)
         {
-            SpawnFood();
+            SpawnFood(_foodPrefabs.First());
             _timer = _spawnTime;
         }
 
@@ -42,28 +45,41 @@ public class FoodManager : MonoBehaviour
         //DateTime.Now
     }
 
-    private void SpawnFood()
+    public void SetCtx(Ctx ctx)
     {
-        var randomIdx = Random.Range(0, _foodPrefabs.Count - 1);
-        var foodPrefab = _foodPrefabs[randomIdx];
+        _ctx = ctx;
+    }
 
-        if (foodPrefab == null) return;
+    private Food SpawnFood(GameObject prefab)
+    {
+        if (prefab == null)
+        {
+            Debug.Log("Food Prefab is null");
+            return null;
+        }
 
-        var foodObj = _pool.Get(foodPrefab);
+        var foodObj = _pool.Get(prefab);
         foodObj.tag = "Food";
 
         _objectsInScene.Add(foodObj);
 
-        foodObj.DieEvent = GameManager.instance.OnFoodDieEvent;
-        foodObj.DieEvent = (_, _) =>
+        foodObj.SetCtx(new Food.Ctx
+        {
+            Score = _ctx.Score,
+            Died = _ctx.FoodDied.ObserveAdd();
+        });
+
+        _ctx.FoodDied.Subscribe(unit =>
         {
             _pool.Push(foodObj);
             _objectsInScene.Remove(foodObj);
-        };
+        }).AddTo(this);
 
         var go = foodObj.gameObject;
-        go.transform.position += GetRandomPosition(); //TODO добавить анимацию
-        //Animation clip
+        go.transform.position = GetRandomPosition() + transform.position;
+
+        return foodObj;
+        //TODO добавить анимацию спавна
     }
 
     public void Init(List<PoolInitData> levelDataFoodDatas)
@@ -72,25 +88,39 @@ public class FoodManager : MonoBehaviour
         _foodPrefabs = _pool.GetPrefabs();
         _maxCountOnLevel = levelDataFoodDatas.First().MaxCountOnLevel;
         _amountOnStart = levelDataFoodDatas.First().Count;
+        _objectsInScene = new List<Food>();
 
         PrepareFood(_foodPrefabs.First()); //TODO Сделать создание для каждого типа префаба.
     }
 
     public void PrepareFood(GameObject prefab)
     {
-        for (var i = 0; i < _amountOnStart; i++)
-        {
-            var obj = _pool.Get(prefab);
-            _objectsInScene.Add(obj);
-        }
+        for (var i = 0; i < _amountOnStart; i++) SpawnFood(prefab);
     }
-
 
     private Vector3 GetRandomPosition()
     {
+        var positions = _objectsInScene.Select(pos => pos.transform.position);
+
+        var maxPos = Vector3.zero;
+        foreach (var position in positions)
+            if (position.magnitude > maxPos.magnitude)
+                maxPos = position;
+
+        //TODO дописать логику рассчета расстояния
+
+        var delta = Vector3.zero; //Дельта расстояния между любым существующим и новым.
+        var meshBounds = Vector3.zero; //Расстояние от центра до границ меша объекта
+
         var randomX = Random.Range(_spawnRadius * -1, _spawnRadius);
         var randomZ = Random.Range(_spawnRadius * -1, _spawnRadius);
 
-        return new Vector3(randomX, 0, randomZ);
+        return new Vector3(randomX, 5F, randomZ);
+    }
+
+    public struct Ctx
+    {
+        public ReactiveCommand<int> Score;
+        public ReactiveCollection<bool> FoodDied; //
     }
 }

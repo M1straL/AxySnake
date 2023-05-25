@@ -1,42 +1,47 @@
 ﻿using System.Linq;
+using DefaultNamespace;
+using UniRx;
 using UnityEngine;
 
-namespace DefaultNamespace
+public class LevelManager
 {
-    public class LevelManager : MonoBehaviour
+    private const string _path = "Assets/Pools/"; // указать путь.
+
+    private readonly LevelsConfig _levelsConfig;
+    private FoodManager _foodManager;
+    private int _level;
+    private PlayerEntity _player;
+
+
+    public LevelManager(Ctx ctx)
     {
-        public static LevelManager instance;
+        _levelsConfig = Resources.Load<LevelsConfig>(_path);
+        if (_levelsConfig == null) Debug.LogError($"LevelsConfig not found in {_path}");
 
-        [SerializeField] private LevelsConfig _levelsConfig;
+        var levelData = GetLevelData(_level);
+        var foodManager = _foodManager;
+        _foodManager.Init(levelData.FoodDatas);
 
-        private FoodManager _foodManager;
-
-        private void Awake()
+        _player = new PlayerEntity(new PlayerEntity.Ctx
         {
-            if (instance == null)
-                instance = this;
-            else if (instance == this) Destroy(gameObject);
-
-            DontDestroyOnLoad(gameObject);
-
-            _foodManager = new FoodManager();
-        }
-
-        private void Start()
-        {
-        }
-
-        private LevelsConfig.LevelData GetLevelData(int level)
-        {
-            return _levelsConfig._levelDatas.FirstOrDefault(data => data._level == level);
-        }
+            HorizontalInput = ctx.HorizontalInput,
+            VerticalInput = ctx.VerticalInput,
+            IsLevelFailed = ctx.IsLevelFailed
+        }); // Передать туда рычаги управления, которые View отдает вовне.
 
 
-        public void InitializeLevel(int level)
-        {
-            var levelData = GetLevelData(level);
+        //Создаем скриптабл оьжект и оттуда дергаем префаб игрока уже со
+    }
 
-            _foodManager.Init(levelData.FoodDatas);
-        }
+    private LevelsConfig.LevelData GetLevelData(int level)
+    {
+        return _levelsConfig._levelDatas.FirstOrDefault(data => data._level == level);
+    }
+
+    public struct Ctx
+    {
+        public ReactiveCommand<float> VerticalInput;
+        public ReactiveCommand<float> HorizontalInput;
+        public ReactiveCommand IsLevelFailed;
     }
 }

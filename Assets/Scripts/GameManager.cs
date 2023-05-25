@@ -1,32 +1,55 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using UnityEngine;
+using System;
+using DefaultNamespace;
+using UniRx;
 
-public class GameManager : MonoBehaviour
+public class GameManager : IDisposable
 {
-    public static GameManager instance = null;
-    private int _score;
-    private void Awake () {
+    private readonly ReactiveCommand<int> _addScore;
 
-        if (instance == null) {
-            instance = this;
-        } else if(instance == this){
-            Destroy(gameObject); 
-        }
-        
-        DontDestroyOnLoad(gameObject);
-        
-        InitializeManager();
-    }
+    private readonly CompositeDisposable _disposable;
 
-    private void InitializeManager()
+    private PlayerEntity _player;
+
+    private PlayerView _playerView;
+
+    private Root _root;
+
+    public GameManager(Ctx ctx)
     {
-        _score = 0;
+        _disposable = new CompositeDisposable(); //CTRL + SPACe code gen
+        _addScore = new ReactiveCommand<int>();
+        ctx._score = new ReactiveProperty<int>(0);
+
+        _addScore.Subscribe(scoreToAdd => ctx._score.Value += scoreToAdd)
+            .AddTo(_disposable); //отписка через _dispoable для не Mobnobehaviour
+        ctx._lives = new ReactiveProperty<int>(5);
+
+        ctx.IsLevelFailed.Subscribe(unit => { LevelFailed(ctx._lives); }).AddTo(_disposable);
     }
 
-    public void OnFoodDieEvent(Food food, int score)
+    public void Dispose()
     {
-        _score += score;
+        _disposable.Dispose();
     }
+
+    public PlayerEntity GetPlayer()
+    {
+        return _player;
+    }
+
+    private void LevelFailed(ReactiveProperty<int> lives)
+    {
+        lives.Value -= 1;
+    }
+
+    public struct Ctx
+    {
+        public ReactiveCommand IsLevelFailed;
+        public ReactiveProperty<int> _lives;
+        public ReactiveProperty<int> _score;
+    }
+
+    #region Channels
+
+    #endregion
 }

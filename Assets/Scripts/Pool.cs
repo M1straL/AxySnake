@@ -1,16 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace DefaultNamespace
 {
     public class Pool<T> where T : Component, IPoolObject
     {
-        private Dictionary<GameObject, Stack<T>> _objects;
-        private Dictionary<T, List<GameObject>> _prefabs;
+        private readonly Dictionary<GameObject, Stack<T>> _objects;
+        private readonly Dictionary<Type, List<GameObject>> _prefabs;
 
         public Pool(List<PoolInitData> poolDatas)
         {
+            _objects = new Dictionary<GameObject, Stack<T>>();
+            _prefabs = new Dictionary<Type, List<GameObject>>();
+
             foreach (var data in poolDatas)
                 for (var i = 0; i < data.Count; i++)
                     Create(data.Prefab);
@@ -18,7 +23,7 @@ namespace DefaultNamespace
 
         private T Create(GameObject prefab)
         {
-            var go = Object.Instantiate(prefab); //TODO написать правильное создание префаба
+            var go = Object.Instantiate(prefab);
             go.SetActive(false);
             var obj = go.GetComponent<T>();
 
@@ -30,7 +35,15 @@ namespace DefaultNamespace
 
             stack.Push(obj);
 
-            _prefabs[obj].Add(prefab);
+            var objectType = obj.GetType();
+            var hashCode = obj.GetHashCode();
+            if (!_prefabs.TryGetValue(objectType, out var gameObjects))
+            {
+                gameObjects = new List<GameObject>();
+                _prefabs[objectType] = gameObjects;
+            }
+
+            gameObjects.Add(prefab);
 
             return obj;
         }
@@ -39,7 +52,8 @@ namespace DefaultNamespace
         {
             if (!_objects.TryGetValue(prefab, out var stack)) return Create(prefab);
 
-            var obj = stack.Pop();
+            if (!stack.TryPop(out var obj)) return Create(prefab);
+
             obj.gameObject.SetActive(true);
             obj.OnAfterFromPool();
 
@@ -48,7 +62,7 @@ namespace DefaultNamespace
 
         public void Push(T obj)
         {
-            if (_prefabs.TryGetValue(obj, out var prefabs))
+            if (_prefabs.TryGetValue(obj.GetType(), out var prefabs))
             {
                 var prefab = prefabs.FirstOrDefault(o => obj.gameObject == o);
                 obj.OnBeforeToPool();
